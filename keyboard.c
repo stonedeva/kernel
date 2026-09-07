@@ -1,7 +1,6 @@
 #include "./keyboard.h"
-#include "./screen.h"
+#include "./shell.h"
 #include "./io.h"
-#include <stdint.h>
 
 unsigned char key_layout[128] =
 {
@@ -41,10 +40,15 @@ unsigned char key_layout[128] =
     0, /* F12 */
 };
 
+char keyboard_get_ch(uint8_t scancode)
+{
+    return key_layout[scancode];
+}
+
 void keyboard_callback()
 {
     uint8_t scancode = inb(0x60);
     if (!(scancode & 0x80)) {
-	printk_ch(key_layout[scancode]);
+	shell_handle_input(scancode);
     }
 }

@@ -5,6 +5,7 @@
 #include "./io.h"
 #include "./keyboard.h"
 #include "./screen.h"
+#include "./shell.h"
 
 /*
  * Multiboot info provided by GRUB bootloader
@@ -53,6 +54,7 @@ typedef struct {
 
 extern void isr_timer();
 extern void isr_keyboard();
+extern void isr_syscall();
 
 volatile uint32_t timer = 0;
 
@@ -83,17 +85,18 @@ void timer_callback()
     timer++;
 }
 
-void kmain(unsigned int magic, multiboot_info_t* mbi_arg)
+void kmain(unsigned int magic, multiboot_info_t* mbi)
 {
     gdt_init();
     idt_init();
     idt_set_gate(32, (uint32_t)isr_timer, 0x08, 0x08E);
     idt_set_gate(33, (uint32_t)isr_keyboard, 0x08, 0x08E);
+    idt_set_gate(0x80, (uint32_t)isr_syscall, 0x08, 0x0EE);
     pic_remap();
+    
+    shell_init(mbi->mem_lower + mbi->mem_upper);
 
     __asm__ volatile ("sti");
-
-    printk("Hello, Kernel: %d\n", 291);
 
     while (1) {
 	__asm__ volatile("hlt");
