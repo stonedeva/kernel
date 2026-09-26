@@ -7,6 +7,7 @@
 #include "./keyboard.h"
 #include "./printf.h"
 #include "./serial.h"
+#include "./shell.h"
 
 /*
  * Multiboot info provided by GRUB bootloader
@@ -160,15 +161,7 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
     framebuffer_init(mbi);
     framebuffer_dump();
 
-    /*
-    for (int y = 0; y < fb.height; y++) {
-	for (int x = 0; x < fb.width; x++) {
-	    uint32_t* pixel = (uint32_t*)(fb.addr + y * fb.pitch + x * 4);
-	    *pixel = 0x0000008B;
-	}
-    }*/
-
-    printk("Hello, Kernel: %d", 201);
+    shell_init(mbi->mem_upper + mbi->mem_lower);
 
     __asm__ volatile ("sti");
 

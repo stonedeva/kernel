@@ -49,6 +49,6 @@ void keyboard_callback()
 {
     uint8_t scancode = inb(0x60);
     if (!(scancode & 0x80)) {
-	//shell_handle_input(scancode);
+	shell_handle_input(scancode);
     }
 }

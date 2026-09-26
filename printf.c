@@ -4,9 +4,11 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#define fscale 2
+
 int x_cursor = 0;
 int y_cursor = 0;
-int fscale = 2;
+int next_pos = 8*fscale;
 
 
 void printk_int(int n)
@@ -44,6 +46,21 @@ void printk_str(char* str)
 
 void printk_ch(char c)
 {
+    switch (c) {
+    case '\n':
+	y_cursor += next_pos;
+	x_cursor = 0;
+	return;
+    case '\b':
+	x_cursor -= next_pos;
+	for (size_t row = 0; row < 8 * fscale; row++) {
+	    for (size_t col = 0; col < 8 * fscale; col++) {
+                kput_pixel(x_cursor + col, y_cursor + row, 0x00000000); 
+	    }
+        }
+	return;
+    }
+
     uint8_t* glyph = font[(uint8_t)c - 0x20];
     /* 
      * Each font entry is converted into binary
@@ -62,7 +79,7 @@ void printk_ch(char c)
 	    }
 	}
     }
-    x_cursor += 8*fscale;
+    x_cursor += next_pos;
 }
 
 void printk(const char* fmt, ...)
