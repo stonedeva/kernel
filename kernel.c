@@ -1,11 +1,12 @@
 #include <stdint.h>
 #include <stdarg.h>
+#include "./kernel.h"
 #include "./gdt.h"
 #include "./idt.h"
 #include "./io.h"
 #include "./keyboard.h"
-#include "./screen.h"
-#include "./shell.h"
+#include "./printf.h"
+#include "./serial.h"
 
 /*
  * Multiboot info provided by GRUB bootloader
@@ -51,6 +52,25 @@ typedef struct {
     uint8_t color_info[6];
 } __attribute__((packed)) multiboot_info_t;
 
+typedef struct {
+    uint8_t* addr;
+    uint32_t width;
+    uint32_t height;
+    uint32_t pitch;
+    uint32_t bpp;
+    uint8_t type;
+    
+    // RGB
+    uint8_t red_pos;
+    uint8_t red_mask;
+    uint8_t green_pos;
+    uint8_t green_mask;
+    uint8_t blue_pos;
+    uint8_t blue_mask;
+} framebuffer_t;
+
+framebuffer_t fb;
+
 
 extern void isr_timer();
 extern void isr_keyboard();
@@ -85,6 +105,43 @@ void timer_callback()
     timer++;
 }
 
+void framebuffer_init(multiboot_info_t* mbi)
+{
+    fb.addr = (uint8_t*)(uintptr_t)mbi->framebuffer_addr;
+
+    fb.width  = mbi->framebuffer_width;
+    fb.height = mbi->framebuffer_height;
+    fb.pitch  = mbi->framebuffer_pitch;
+    fb.bpp    = mbi->framebuffer_bpp;
+    fb.type   = mbi->framebuffer_type;
+
+    if (fb.type == 1) {
+        fb.red_pos = mbi->color_info[0];
+        fb.red_mask = mbi->color_info[1];
+
+        fb.green_pos = mbi->color_info[2];
+        fb.green_mask = mbi->color_info[3];
+
+        fb.blue_pos = mbi->color_info[4];
+        fb.blue_mask = mbi->color_info[5];
+    }
+}
+
+void framebuffer_dump()
+{
+    serial_println("fb.addr", fb.addr);
+    serial_println("fb.width", fb.width);
+    serial_println("fb.height", fb.height);
+    serial_println("fb.pitch", fb.pitch);
+    serial_println("fb.bpp", fb.bpp);
+    serial_println("fb.type", fb.type);
+}
+
+void kput_pixel(int x, int y, int col)
+{
+    *(uint32_t*)(fb.addr + y * fb.pitch + x) = col;
+}
+
 void kmain(unsigned int magic, multiboot_info_t* mbi)
 {
     gdt_init();
@@ -93,8 +150,25 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
     idt_set_gate(33, (uint32_t)isr_keyboard, 0x08, 0x08E);
     idt_set_gate(0x80, (uint32_t)isr_syscall, 0x08, 0x0EE);
     pic_remap();
-    
-    shell_init(mbi->mem_lower + mbi->mem_upper);
+    serial_init();
+
+    if (!(mbi->flags & (1 << 12))) {
+	serial_println("mbi->flags: ", 0);
+	return;
+    }
+
+    framebuffer_init(mbi);
+    framebuffer_dump();
+
+    /*
+    for (int y = 0; y < fb.height; y++) {
+	for (int x = 0; x < fb.width; x++) {
+	    uint32_t* pixel = (uint32_t*)(fb.addr + y * fb.pitch + x * 4);
+	    *pixel = 0x0000008B;
+	}
+    }*/
+
+    printk_ch('A', 0, 0);
 
     __asm__ volatile ("sti");
 

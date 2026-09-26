@@ -3,8 +3,6 @@
 
 #include <stddef.h>
 
-int memcmp(void* aptr, void* bptr, size_t sz);
-void memcpy(void* aptr, void* bptr, size_t sz);
-void memset(void* aptr, int c, size_t sz);
+void* memset(void* ptr, int c, size_t n);
 
 #endif // _MEMORY_H_

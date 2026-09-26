@@ -1,23 +1,26 @@
-#include "./screen.h"
+#include "./printf.h"
+#include "./font.h"
+#include "./kernel.h"
 #include <stdarg.h>
+#include <stddef.h>
 
 
 uint16_t* vga = (uint16_t*)0xb8000;
-uint32_t vga_ptr = 0;
+int vga_ptr = 0;
 
 
-void printk_int(uint32_t n)
+void printk_int(int n)
 {
     char buf[12];
-    uint32_t i = 0;
+    int i = 0;
 
     if (n == 0) {
-        printk_ch('0');
+        //printk_ch('0');
         return;
     }
 
     if (n < 0) {
-        printk_ch('-');
+        //printk_ch('-');
         n = -n;
     }
 
@@ -27,7 +30,7 @@ void printk_int(uint32_t n)
     }
 
     while (i > 0) {
-        printk_ch(buf[--i]);
+        //printk_ch(buf[--i]);
     }
 }
 
@@ -39,16 +42,39 @@ void printk_str(char* str)
     }
 }
 
+void printk_ch(char c, int x, int y)
+{
+    uint8_t* glyph = font[(uint8_t)c - 0x20];
+    /* 
+     * Each font entry is converted into binary
+     * 1 = pixel, 0 = empty
+    */
+    for (size_t row = 0; row < 8; row++) {
+	for (size_t col = 0; col < 8; col++) {
+	    if (glyph[row] & (1 << col)) {
+		kput_pixel(x+row, y+col, 0x00FFFFFF);
+	    }
+	}
+    }
+}
+
+/*
 void printk_ch(char c)
 {
     switch (c) {
     case '\n':
 	vga_ptr = ((vga_ptr / 80) + 1) * 80;
 	return;
+    case '\b':
+	if (vga_ptr < 2) return;
+	vga_ptr -= 2;
+	vga[vga_ptr] = ' ';
+
+	return;
     }
     vga[vga_ptr++] = c | (0x07 << 8);
 }
-
+*/
 void printk(const char* fmt, ...)
 {
     va_list args;
@@ -56,7 +82,7 @@ void printk(const char* fmt, ...)
 
     while (*fmt) {
         if (*fmt != '%') {
-            printk_ch(*fmt);
+            //printk_ch(*fmt);
             fmt++;
             continue;
         }
@@ -69,15 +95,15 @@ void printk(const char* fmt, ...)
             break;
         case 'c':
             char ch = va_arg(args, char);
-            printk_ch(ch);
+            //printk_ch(ch);
             break;
         case 'd':
-            uint32_t n = va_arg(args, uint32_t);
+            int n = va_arg(args, int);
             printk_int(n);
             break;
         default:
-            printk_ch('%');
-            printk_ch(*fmt);
+            //printk_ch('%');
+            //printk_ch(*fmt);
             break;
         }
 

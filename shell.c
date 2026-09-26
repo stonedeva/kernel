@@ -1,6 +1,6 @@
 // Make shell a userspace program eventually
 
-#include "./screen.h"
+#include "./printf.h"
 #include "./keyboard.h"
 #include "./memory.h"
 
@@ -10,6 +10,7 @@ void shell_init(uint32_t mem_kb)
 {
     printk("Elox Shell v0.01 (kernel mode)\n");
     printk("Free Memory: %d KB\n", mem_kb);
+    printk("sizeof(void*) = %d\n", sizeof(void*));
     printk_ch('>');
 }
 
@@ -24,14 +25,25 @@ void shell_process_cmd()
 
 void shell_handle_input(uint8_t scancode)
 {
-    if (scancode == 0x1C) {
+    switch (scancode) {
+    case 0x1C:
 	// Enter Key
 	shell_process_cmd();
 	memset(cmd, 0, cmd_sz);
 	cmd_sz = 0;
 	printk("\n>");
-    } else {
+	break;
+    case 0x0E:
+	// Backspace
+	if (cmd_sz > 0) {
+	    cmd_sz--;
+	    cmd[cmd_sz] = '\0';
+	    printk_ch('\b');
+	}
+	break;
+    default:
 	cmd[cmd_sz++] = keyboard_get_ch(scancode);
 	printk_ch(cmd[cmd_sz-1]);
+	break;
     }
 }
