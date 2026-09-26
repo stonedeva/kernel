@@ -4,9 +4,9 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-
-uint16_t* vga = (uint16_t*)0xb8000;
-int vga_ptr = 0;
+int x_cursor = 0;
+int y_cursor = 0;
+int fscale = 2;
 
 
 void printk_int(int n)
@@ -15,12 +15,12 @@ void printk_int(int n)
     int i = 0;
 
     if (n == 0) {
-        //printk_ch('0');
+        printk_ch('0');
         return;
     }
 
     if (n < 0) {
-        //printk_ch('-');
+        printk_ch('-');
         n = -n;
     }
 
@@ -30,19 +30,19 @@ void printk_int(int n)
     }
 
     while (i > 0) {
-        //printk_ch(buf[--i]);
+        printk_ch(buf[--i]);
     }
 }
 
 void printk_str(char* str)
 {
     while (*str != '\0') {
-        vga[vga_ptr++] = *str | (0x07 << 8);
+	printk_ch(*str);
         str++;
     }
 }
 
-void printk_ch(char c, int x, int y)
+void printk_ch(char c)
 {
     uint8_t* glyph = font[(uint8_t)c - 0x20];
     /* 
@@ -51,30 +51,20 @@ void printk_ch(char c, int x, int y)
     */
     for (size_t row = 0; row < 8; row++) {
 	for (size_t col = 0; col < 8; col++) {
-	    if (glyph[row] & (1 << col)) {
-		kput_pixel(x+row, y+col, 0x00FFFFFF);
+	    if (glyph[row] & (0x80 >> col)) {
+		for (size_t dy = 0; dy < fscale; dy++) {
+		    for (size_t dx = 0; dx < fscale; dx++) {
+			kput_pixel(x_cursor + col * fscale + dx, 
+				   y_cursor + row * fscale + dy, 
+				   0x00FFFFFF);
+		    }
+		}
 	    }
 	}
     }
+    x_cursor += 8*fscale;
 }
 
-/*
-void printk_ch(char c)
-{
-    switch (c) {
-    case '\n':
-	vga_ptr = ((vga_ptr / 80) + 1) * 80;
-	return;
-    case '\b':
-	if (vga_ptr < 2) return;
-	vga_ptr -= 2;
-	vga[vga_ptr] = ' ';
-
-	return;
-    }
-    vga[vga_ptr++] = c | (0x07 << 8);
-}
-*/
 void printk(const char* fmt, ...)
 {
     va_list args;
@@ -82,7 +72,7 @@ void printk(const char* fmt, ...)
 
     while (*fmt) {
         if (*fmt != '%') {
-            //printk_ch(*fmt);
+            printk_ch(*fmt);
             fmt++;
             continue;
         }
@@ -95,15 +85,15 @@ void printk(const char* fmt, ...)
             break;
         case 'c':
             char ch = va_arg(args, char);
-            //printk_ch(ch);
+            printk_ch(ch);
             break;
         case 'd':
             int n = va_arg(args, int);
             printk_int(n);
             break;
         default:
-            //printk_ch('%');
-            //printk_ch(*fmt);
+            printk_ch('%');
+            printk_ch(*fmt);
             break;
         }
 

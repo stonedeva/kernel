@@ -139,7 +139,7 @@ void framebuffer_dump()
 
 void kput_pixel(int x, int y, int col)
 {
-    *(uint32_t*)(fb.addr + y * fb.pitch + x) = col;
+    *(uint32_t*)(fb.addr + y * fb.pitch + x * 4) = col;
 }
 
 void kmain(unsigned int magic, multiboot_info_t* mbi)
@@ -168,7 +168,7 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
 	}
     }*/
 
-    printk_ch('A', 0, 0);
+    printk("Hello, Kernel: %d", 201);
 
     __asm__ volatile ("sti");
 
