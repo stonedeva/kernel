@@ -20,7 +20,9 @@ int cmd_sz = 0;
 void shell_process_cmd()
 {
     printk_ch('\n');
-    printk(cmd);
+    if (strcmp(cmd, "version") == 0) {
+	printk("v0.01a");
+    }
 }
 
 void shell_handle_input(uint8_t scancode)

@@ -52,6 +52,9 @@ void printk_ch(char c)
 	x_cursor = 0;
 	return;
     case '\b':
+	if (x_cursor <= next_pos) {
+	    return;
+	}
 	x_cursor -= next_pos;
 	for (size_t row = 0; row < 8 * fscale; row++) {
 	    for (size_t col = 0; col < 8 * fscale; col++) {
