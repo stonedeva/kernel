@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-void shell_init(uint32_t mem_kb);
+void shell_init();
 void shell_handle_input(uint8_t scancode);
 
 #endif // _SHELL_H_

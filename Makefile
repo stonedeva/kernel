@@ -12,7 +12,7 @@ BIN_DIR = $(BUILD_DIR)/bin
 ISO_DIR = $(BUILD_DIR)/iso
 
 # Explicitly list your root source folders to search through
-SRC_DIRS = boot kernel arch drivers
+SRC_DIRS = boot kernel mm drivers
 
 # Find all .c and .asm files inside the specified root folders recursively
 C_SRCS := $(shell find $(SRC_DIRS) -name '*.c')

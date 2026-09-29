@@ -1,16 +1,15 @@
 // Make shell a userspace program eventually
 
 #include "./printf.h"
+#include "./kernel.h"
 #include "./keyboard.h"
 #include "./memory.h"
 
 #define CMD_BUF_CAP 1024
 
-void shell_init(uint32_t mem_kb)
+void shell_init()
 {
     printk("Elox Shell v0.01 (kernel mode)\n");
-    printk("Free Memory: %d KB\n", mem_kb);
-    printk("sizeof(void*) = %d\n", sizeof(void*));
     printk_ch('>');
 }
 

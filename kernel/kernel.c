@@ -7,6 +7,8 @@
 #include "./keyboard.h"
 #include "./printf.h"
 #include "./serial.h"
+#include "./frame.h"
+#include "./page.h"
 #include "./shell.h"
 
 /*
@@ -76,6 +78,7 @@ framebuffer_t fb;
 extern void isr_timer();
 extern void isr_keyboard();
 extern void isr_syscall();
+extern void isr_page_fault();
 
 volatile uint32_t timer = 0;
 
@@ -145,23 +148,26 @@ void kput_pixel(int x, int y, int col)
 
 void kmain(unsigned int magic, multiboot_info_t* mbi)
 {
+    serial_init();
     gdt_init();
     idt_init();
+//    idt_set_gate(14, (uint32_t)isr_page_fault, 0x08, 0x08E);
     idt_set_gate(32, (uint32_t)isr_timer, 0x08, 0x08E);
     idt_set_gate(33, (uint32_t)isr_keyboard, 0x08, 0x08E);
     idt_set_gate(0x80, (uint32_t)isr_syscall, 0x08, 0x0EE);
     pic_remap();
-    serial_init();
+    frame_init(mbi->mem_upper + mbi->mem_lower);
+    framebuffer_init(mbi);
+
+    paging_init();
 
     if (!(mbi->flags & (1 << 12))) {
-	serial_println("mbi->flags: ", 0);
 	return;
     }
 
-    framebuffer_init(mbi);
-    framebuffer_dump();
+//    framebuffer_dump();
 
-    shell_init(mbi->mem_upper + mbi->mem_lower);
+    shell_init();
 
     __asm__ volatile ("sti");
 
