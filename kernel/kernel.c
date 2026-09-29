@@ -11,6 +11,8 @@
 #include "./page.h"
 #include "./shell.h"
 
+#define FB_VIRTUAL_ADDR 0x00400008;
+
 /*
  * Multiboot info provided by GRUB bootloader
 */
@@ -151,7 +153,7 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
     serial_init();
     gdt_init();
     idt_init();
-//    idt_set_gate(14, (uint32_t)isr_page_fault, 0x08, 0x08E);
+    idt_set_gate(14, (uint32_t)isr_page_fault, 0x08, 0x08E);
     idt_set_gate(32, (uint32_t)isr_timer, 0x08, 0x08E);
     idt_set_gate(33, (uint32_t)isr_keyboard, 0x08, 0x08E);
     idt_set_gate(0x80, (uint32_t)isr_syscall, 0x08, 0x0EE);
@@ -159,13 +161,14 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
     frame_init(mbi->mem_upper + mbi->mem_lower);
     framebuffer_init(mbi);
 
-    paging_init();
+    paging_init(fb.addr, fb.pitch*fb.height);
+    fb.addr = (uint8_t*)FB_VIRTUAL_ADDR;
 
     if (!(mbi->flags & (1 << 12))) {
 	return;
     }
 
-//    framebuffer_dump();
+    framebuffer_dump();
 
     shell_init();
 

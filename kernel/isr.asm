@@ -33,11 +33,19 @@ isr_page_fault:
     cli
     pushad
 
+;    mov eax, cr2
+;    push eax
+;    call page_fault_callback
+;    add esp, 4
+;    popad
+;    add esp, 4
+;    iret
     mov eax, cr2
+    mov edx, [esp + 36]
     push eax
+    push edx
     call page_fault_callback
-    add esp, 4
-    
+    add esp, 8
     popad
     add esp, 4
-    iret
+    iretd
