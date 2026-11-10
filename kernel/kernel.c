@@ -4,6 +4,7 @@
 #include "./gdt.h"
 #include "./idt.h"
 #include "./io.h"
+#include "./ata.h"
 #include "./keyboard.h"
 #include "./printf.h"
 #include "./serial.h"
@@ -11,7 +12,7 @@
 #include "./page.h"
 #include "./shell.h"
 
-#define FB_VIRTUAL_ADDR 0x00400008;
+#define FB_VIRTUAL_ADDR 0x00400008
 
 /*
  * Multiboot info provided by GRUB bootloader
@@ -79,8 +80,8 @@ framebuffer_t fb;
 
 extern void isr_timer();
 extern void isr_keyboard();
-extern void isr_syscall();
 extern void isr_page_fault();
+extern void isr_ata();
 
 volatile uint32_t timer = 0;
 
@@ -156,7 +157,7 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
     idt_set_gate(14, (uint32_t)isr_page_fault, 0x08, 0x08E);
     idt_set_gate(32, (uint32_t)isr_timer, 0x08, 0x08E);
     idt_set_gate(33, (uint32_t)isr_keyboard, 0x08, 0x08E);
-    idt_set_gate(0x80, (uint32_t)isr_syscall, 0x08, 0x0EE);
+    idt_set_gate(46, (uint32_t)isr_ata, 0x08, 0x08E);
     pic_remap();
     frame_init(mbi->mem_upper + mbi->mem_lower);
     framebuffer_init(mbi);
@@ -169,6 +170,11 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
     }
 
     framebuffer_dump();
+
+    uint8_t buffer[512];
+    ata_read_sector0(buffer);
+    buffer[512] = '\0';
+    printk("%s\n", (char*)buffer);
 
     shell_init();
 

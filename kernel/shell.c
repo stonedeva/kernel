@@ -9,9 +9,9 @@
 
 void shell_init()
 {
-    printk("Elox Shell v0.01 (kernel mode)\n");
-    printk_ch('>');
+    printk("$ ");
 }
+
 
 char cmd[CMD_BUF_CAP];
 int cmd_sz = 0; 
@@ -32,7 +32,7 @@ void shell_handle_input(uint8_t scancode)
 	shell_process_cmd();
 	memset(cmd, 0, cmd_sz);
 	cmd_sz = 0;
-	printk("\n>");
+	printk("\n$ ");
 	break;
     case 0x0E:
 	// Backspace
