@@ -154,13 +154,13 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
     serial_init();
     gdt_init();
     idt_init();
+    framebuffer_init(mbi);
     idt_set_gate(14, (uint32_t)isr_page_fault, 0x08, 0x08E);
     idt_set_gate(32, (uint32_t)isr_timer, 0x08, 0x08E);
     idt_set_gate(33, (uint32_t)isr_keyboard, 0x08, 0x08E);
     idt_set_gate(46, (uint32_t)isr_ata, 0x08, 0x08E);
     pic_remap();
     frame_init(mbi->mem_upper + mbi->mem_lower);
-    framebuffer_init(mbi);
 
     paging_init(fb.addr, fb.pitch*fb.height);
     fb.addr = (uint8_t*)FB_VIRTUAL_ADDR;
@@ -169,11 +169,8 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
 	return;
     }
 
-    framebuffer_dump();
-
     uint8_t buffer[512];
-    ata_read_sector0(buffer);
-    buffer[512] = '\0';
+    ata_read_sector(0, buffer);
     printk("%s\n", (char*)buffer);
 
     shell_init();

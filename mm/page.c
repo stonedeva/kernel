@@ -1,4 +1,5 @@
 #include "./page.h"
+#include "./printf.h"
 #include "./serial.h"
 
 extern void page_enable();
@@ -57,8 +58,9 @@ void framebuffer_map(uint32_t phys_addr, uint32_t sz)
 
 void page_fault_callback(uint32_t eip, uint32_t addr)
 {
-    serial_println("Addr", addr);
-    serial_println("EIP", eip);
+    printk("Page Fault!...\n");
+    printk("Addr: %d\n", addr);
+    printk("EIP: %d\n", eip);
     
     while (1) {
 	asm volatile("hlt");
