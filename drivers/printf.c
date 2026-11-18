@@ -85,6 +85,14 @@ void printk_ch(char c)
     x_cursor += next_pos;
 }
 
+void printk_hex(uintptr_t v)
+{
+    static const char digits[] = "0123456789abcdef";
+
+    for (int shift = (int)(sizeof(uintptr_t) * 8) - 4; shift >= 0; shift -= 4)
+        printk_ch(digits[(v >> shift) & 0xF]);
+}
+
 void printk(const char* fmt, ...)
 {
     va_list args;
@@ -111,6 +119,11 @@ void printk(const char* fmt, ...)
             int n = va_arg(args, int);
             printk_int(n);
             break;
+	case 'p':
+	    void* ptr = va_arg(args, void*);
+	    printk_str("0x");
+	    printk_hex((uintptr_t)ptr);
+	    break;
         default:
             printk_ch('%');
             printk_ch(*fmt);

@@ -59,8 +59,8 @@ void framebuffer_map(uint32_t phys_addr, uint32_t sz)
 void page_fault_callback(uint32_t eip, uint32_t addr)
 {
     printk("Page Fault!...\n");
-    printk("Addr: %d\n", addr);
-    printk("EIP: %d\n", eip);
+    printk("Addr: %p\n", addr);
+    printk("EIP: %p\n", eip);
     
     while (1) {
 	asm volatile("hlt");

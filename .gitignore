@@ -1,4 +1,5 @@
 bin/
 iso/
+initrd_root/
 fs/empty.img
 kernel.iso

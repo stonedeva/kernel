@@ -17,7 +17,7 @@
 /*
  * Multiboot info provided by GRUB bootloader
 */
-typedef struct {
+struct multiboot_info {
     uint32_t flags;
 
     uint32_t mem_lower;
@@ -56,9 +56,16 @@ typedef struct {
     uint8_t framebuffer_type;
 
     uint8_t color_info[6];
-} __attribute__((packed)) multiboot_info_t;
+} __attribute__((packed));
 
-typedef struct {
+struct multiboot_mod {
+    uint32_t mod_start;
+    uint32_t mod_end;
+    uint32_t string;
+    uint32_t reserved;
+} __attribute__((packed));
+
+struct framebuffer {
     uint8_t* addr;
     uint32_t width;
     uint32_t height;
@@ -73,9 +80,9 @@ typedef struct {
     uint8_t green_mask;
     uint8_t blue_pos;
     uint8_t blue_mask;
-} framebuffer_t;
+} __attribute__((packed));
 
-framebuffer_t fb;
+struct framebuffer fb;
 
 
 extern void isr_timer();
@@ -112,7 +119,7 @@ void timer_callback()
     timer++;
 }
 
-void framebuffer_init(multiboot_info_t* mbi)
+void framebuffer_init(struct multiboot_info* mbi)
 {
     fb.addr = (uint8_t*)(uintptr_t)mbi->framebuffer_addr;
 
@@ -134,22 +141,12 @@ void framebuffer_init(multiboot_info_t* mbi)
     }
 }
 
-void framebuffer_dump()
-{
-    serial_println("fb.addr", fb.addr);
-    serial_println("fb.width", fb.width);
-    serial_println("fb.height", fb.height);
-    serial_println("fb.pitch", fb.pitch);
-    serial_println("fb.bpp", fb.bpp);
-    serial_println("fb.type", fb.type);
-}
-
 void kput_pixel(int x, int y, int col)
 {
     *(uint32_t*)(fb.addr + y * fb.pitch + x * 4) = col;
 }
 
-void kmain(unsigned int magic, multiboot_info_t* mbi)
+void kmain(unsigned int magic, struct multiboot_info* mbi)
 {
     serial_init();
     gdt_init();
@@ -169,9 +166,15 @@ void kmain(unsigned int magic, multiboot_info_t* mbi)
 	return;
     }
 
-    uint8_t buffer[512];
-    ata_read_sector(0, buffer);
-    printk("%s\n", (char*)buffer);
+    struct multiboot_mod* mod = (struct multiboot_mod*)mbi->mods_addr;
+    uint8_t* initrd_start = (uint8_t*)mod[0].mod_start;
+    uint8_t* initrd_end = (uint8_t*)mod[0].mod_end;
+
+    unsigned len;
+    uint8_t* file = tar_find(initrd_start, "hello.txt", &len);
+
+    printk("file=%p, len=%d\n", file, len);
+    printk("%s\n", (char*)file);
 
     shell_init();
 
